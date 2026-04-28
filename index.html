@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#131315">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon.png">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js');
+    });
+  }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omnideck - Ultimate Premium Edition con IA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- VARIABLES Y RESET --- */
+        :root {
+            --bg-app: linear-gradient(160deg, #131315 0%, #0a0a0c 100%);
+            --surface-color: rgba(30, 30, 34, 0.6);
+            --surface-light: rgba(45, 45, 50, 0.8);
+            --gold: #e6c27a;
+            --gold-gradient: linear-gradient(135deg, #f5d796 0%, #b38b36 100%);
+            --gold-dim: rgba(230, 194, 122, 0.15);
+            --text-main: #fcfcfc;
+            --text-muted: #8e8e93;
+            --success: #32d74b;
+            --danger: #ff453a;
+            --accent-ai: #bf5af2;
+            --ai-gradient: linear-gradient(135deg, #bf5af2 0%, #7d26cd 100%);
+            --ai-dim: rgba(191, 90, 242, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: radial-gradient(circle at top right, #2a2a30 0%, #000000 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: var(--text-main);
+        }
+
+        /* --- CONTENEDOR DE LA APP --- */
+        #app-container {
+            width: 390px;
+            height: 844px;
+            background: var(--bg-app);
+            border-radius: 50px;
+            border: 6px solid #222;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(230, 194, 122, 0.03);
+        }
+
+        /* --- HEADER --- */
+        header {
+            flex-shrink: 0;
+            padding: 45px 25px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: transparent;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: 0.5px;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .bt-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--danger);
+            box-shadow: 0 0 12px var(--danger);
+            transition: all 0.4s ease;
+        }
+        .bt-indicator.connected {
+            background-color: var(--success);
+            box-shadow: 0 0 12px var(--success);
+        }
+
+        /* --- ÁREA PRINCIPAL (SCROLL) --- */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+            scroll-behavior: smooth;
+        }
+        main::-webkit-scrollbar { display: none; }
+
+        .page {
+            display: none;
+            padding: 0 25px 140px; 
+            animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            margin-bottom: 18px;
+            margin-top: 10px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* --- BARAJAS: CUADRÍCULA 3x2 --- */
+        .decks-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .card-btn {
+            background: var(--surface-color);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 22px; 
+            padding: 20px 5px;
+            text-align: center;
+            color: var(--text-muted);
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(10px);
+        }
+        .card-btn.active {
+            border-color: var(--gold);
+            background: var(--gold-dim);
+            color: var(--gold);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(230, 194, 122, 0.15);
+        }
+        .card-btn i { font-size: 1.8rem; transition: color 0.3s ease; }
+        .card-btn span { font-size: 0.75rem; font-weight: 600; }
+
+        /* --- LISTA DE JUEGOS --- */
+        .list-item {
+            background: var(--surface-color);
+            border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 24px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+        .list-item:active { transform: scale(0.98); background: var(--surface-light); }
+        .list-item i {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            width: 45px;
+            height: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            transition: 0.3s;
+        }
+        .list-item:hover i { background: var(--gold-dim); color: var(--gold); }
+        .list-item-content h3 { font-size: 1rem; margin-bottom: 4px; font-weight: 600; }
+        .list-item-content p { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* --- BOTONES PRINCIPALES --- */
+        .primary-btn {
+            background: var(--gold-gradient);
+            border: none;
+            color: #111;
+            width: 100%;
+            padding: 18px;
+            border-radius: 50px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(230, 194, 122, 0.2);
+        }
+        .primary-btn:active { transform: scale(0.96); box-shadow: 0 4px 10px rgba(230, 194, 122, 0.2); }
+        .primary-btn.outline { background: transparent; border: 2px solid var(--gold); color: var(--gold); box-shadow: none; }
+        
+        .primary-btn.ai-btn {
+            background: var(--ai-gradient);
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(191, 90, 242, 0.3);
+            margin-top: 20px;
+        }
+
+        /* --- BLUETOOTH PAGE --- */
+        .bt-status-wrapper { text-align: center; padding: 60px 0 40px; }
+        .bt-icon-large { font-size: 5rem; color: rgba(255,255,255,0.05); margin-bottom: 30px; transition: all 0.5s; }
+        .bt-icon-large.active { color: var(--success); text-shadow: 0 0 40px rgba(50, 215, 75, 0.5); transform: scale(1.15); }
+
+        /* --- CONFIGURADOR IA FORMULARIO PREMIUM --- */
+        .form-group {
+            margin-bottom: 20px;
+            background: var(--surface-color);
+            padding: 15px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--accent-ai);
+            letter-spacing: 0.5px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.3);
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+            transition: 0.3s;
+            appearance: none; /* Quita flecha nativa en selects */
+        }
+        .form-control:focus { border-color: var(--accent-ai); box-shadow: 0 0 10px rgba(191, 90, 242, 0.2); }
+        
+        /* Contenedor select para icono personalizado */
+        .select-wrapper { position: relative; }
+        .select-wrapper::after {
+            content: '\f107';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .ia-response {
+            background: var(--surface-light);
+            border-left: 4px solid var(--accent-ai);
+            padding: 20px;
+            border-radius: 16px;
+            margin-top: 25px;
+            display: none;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: fadeIn 0.5s ease;
+        }
+        .ia-response strong { color: var(--accent-ai); display: block; margin-bottom: 8px; font-size: 1rem; }
+        .ia-response hr { border: 0; height: 1px; background: rgba(255,255,255,0.1); margin: 15px 0; }
+        .ia-response code { font-family: monospace; color: var(--text-muted); font-size: 0.8rem; }
+
+        /* --- CONTENEDOR BOTÓN FLOTANTE --- */
+        #floating-sync-wrapper {
+            position: absolute;
+            bottom: 85px; 
+            left: 0;
+            width: 100%;
+            padding: 30px 25px 15px;
+            background: linear-gradient(to top, rgba(13,13,15,1) 30%, rgba(13,13,15,0) 100%);
+            z-index: 20;
+            pointer-events: none; 
+        }
+        #main-sync-btn { pointer-events: auto; }
+
+        /* --- BOTTOM NAV --- */
+        nav {
+            flex-shrink: 0;
+            background: rgba(15, 15, 18, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 15px 25px 25px;
+            display: flex;
+            justify-content: space-around;
+            border-top: 1px solid rgba(255,255,255,0.03);
+            z-index: 30;
+        }
+        .nav-item {
+            color: #555;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.3s;
+            position: relative;
+            padding: 5px 15px;
+        }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 6px; display: block; transition: transform 0.3s; }
+        .nav-item.active { color: var(--text-main); font-weight: 600; }
+        .nav-item.active i { color: var(--gold); transform: translateY(-4px); }
+        
+        /* Tema púrpura para tab IA activa */
+        .nav-item.ai-tab.active i { color: var(--accent-ai); }
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 5px;
+            height: 5px;
+            background-color: var(--gold);
+            border-radius: 50%;
+        }
+        .nav-item.ai-tab.active::after { background-color: var(--accent-ai); box-shadow: 0 0 8px var(--accent-ai); }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <header>
+            <div class="logo">
+                <i class="fa-solid fa-spade"></i> OMNIDECK
+            </div>
+            <div id="bt-global-indicator" class="bt-indicator" title="Estado Bluetooth"></div>
+        </header>
+
+        <main id="main-content">
+            <section id="page-games" class="page active">
+                <h2>Mis Barajas</h2>
+                
+                <div class="decks-grid" id="deck-selector">
+                    <div class="card-btn active" onclick="selectDeck(this, 'Española')">
+                        <i class="fa-solid fa-khanda"></i>
+                        <span>Española</span>
+                    </div>
+                    <div class="card-btn" onclick="selectDeck(this, 'Póker')">
+                        <i class="fa-solid fa-diamond"></i>
+                        <span>Póker</span>
+                    </div>
+                    <div class="card-btn" onclick="selectDeck(this, 'UNO')">
+                        <i class="fa-solid fa-palette"></i>
+                        <span>UNO</span>
+                    </div>
+                    <div class="card-btn" onclick="selectDeck(this, 'Preguntas')">
+                        <i class="fa-solid fa-circle-question"></i>
+                        <span>Preguntas</span>
+                    </div>
+                    <div class="card-btn" onclick="selectDeck(this, 'Pictionary')">
+                        <i class="fa-solid fa-pen-clip"></i>
+                        <span>Pictionary</span>
+                    </div>
+                    <div class="card-btn" onclick="selectDeck(this, 'Dobble')">
+                        <i class="fa-solid fa-circle-nodes"></i>
+                        <span>Dobble</span>
+                    </div>
+                </div>
+
+                <h2>Juegos Destacados</h2>
+                <div id="games-list">
+                    <div class="list-item">
+                        <i class="fa-solid fa-coins"></i>
+                        <div class="list-item-content">
+                            <h3>Truco Argentino</h3>
+                            <p>Baraja Española • 2-6 Jugadores</p>
+                        </div>
+                    </div>
+                    <div class="list-item">
+                        <i class="fa-solid fa-crown"></i>
+                        <div class="list-item-content">
+                            <h3>Texas Hold'em</h3>
+                            <p>Baraja Póker • Auto-Detección</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="page-connect" class="page">
+                <h2>Conexión</h2>
+                <div class="bt-status-wrapper">
+                    <i id="bt-large-icon" class="fa-brands fa-bluetooth-b bt-icon-large"></i>
+                    <h3 id="bt-status-text" style="margin-bottom: 15px; font-size: 1.5rem; font-weight: 700;">Desconectado</h3>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; padding: 0 10px;">
+                        Asegúrate de que tu Omnideck esté encendida para sincronizar la <b id="sync-mode-text" style="color:var(--text-main);">Baraja Española</b>.
+                    </p>
+                </div>
+
+                <button id="btn-connect" class="primary-btn outline" onclick="toggleBluetooth()">
+                    <i class="fa-solid fa-link"></i> Conectar Dispositivo
+                </button>
+            </section>
+
+            <section id="page-ai" class="page">
+                <h2><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent-ai);"></i> Creación IA</h2>
+                
+                <div class="form-group">
+                    <label>Tipo de Baraja Base</label>
+                    <div class="select-wrapper">
+                        <select id="tipoBaraja" class="form-control">
+                            <option value="espanola">Española (40/48 cartas)</option>
+                            <option value="francesa">Francesa/Póker (52 cartas)</option>
+                            <option value="uno">Cartas de Colores (UNO)</option>
+                            <option value="personalizada">Cruce Híbrido (IA)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Cartas repartidas por jugador</label>
+                    <input type="number" id="numCartas" class="form-control" value="3" min="1" max="15">
+                </div>
+
+                <div class="form-group">
+                    <label>Regla de Puntuación (Opcional)</label>
+                    <textarea id="ptsCartas" class="form-control" rows="2" placeholder="Ej: As=11, 3=10, Figuras=0..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Condición de Victoria</label>
+                    <div class="select-wrapper">
+                        <select id="condicionVictoria" class="form-control">
+                            <option value="puntos">Llegar a límite de puntos</option>
+                            <option value="sin_cartas">Quedarse sin cartas</option>
+                            <option value="bazas">Ganar el mayor número de bazas</option>
+                            <option value="combinacion">Formar escaleras/tercias</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="btn-generar-ia" class="primary-btn ai-btn" onclick="generarLogicaIA()">
+                    <i class="fa-solid fa-microchip"></i> Generar Reglas con IA
+                </button>
+
+                <div id="iaOutput" class="ia-response">
+                    <strong><i class="fa-solid fa-robot"></i> Análisis Omnideck:</strong> 
+                    <span id="iaSugestion"></span>
+                    <hr>
+                    <code>[Estructura JSON generada y lista para sincronizar con la baraja física]</code>
+                </div>
+            </section>
+        </main>
+
+        <div id="floating-sync-wrapper">
+            <button id="main-sync-btn" class="primary-btn" onclick="syncSelectedDeck()">
+                <i class="fa-brands fa-bluetooth-b"></i> Sincronizar Española
+            </button>
+        </div>
+
+        <nav>
+            <div class="nav-item active" onclick="switchTab('page-games', this)">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Barajas</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('page-connect', this)">
+                <i class="fa-brands fa-bluetooth"></i>
+                <span>Conexión</span>
+            </div>
+            <div class="nav-item ai-tab" onclick="switchTab('page-ai', this)">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Crear IA</span>
+            </div>
+        </nav>
+    </div>
+
+    <script>
+        let currentSelectedDeck = 'Española';
+
+        // --- LÓGICA DE NAVEGACIÓN ---
+        function switchTab(pageId, navElement) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+
+            const floatingBtnWrapper = document.getElementById('floating-sync-wrapper');
+            if(pageId === 'page-games') {
+                floatingBtnWrapper.style.display = 'block';
+            } else {
+                floatingBtnWrapper.style.display = 'none';
+            }
+
+            if(navElement) {
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                navElement.classList.add('active');
+            }
+        }
+
+        // --- SELECCIÓN DE BARAJA ---
+        function selectDeck(element, deckName) {
+            const cards = document.querySelectorAll('#deck-selector .card-btn');
+            cards.forEach(card => card.classList.remove('active'));
+            
+            element.classList.add('active');
+            currentSelectedDeck = deckName;
+
+            document.getElementById('main-sync-btn').innerHTML = `<i class="fa-brands fa-bluetooth-b"></i> Sincronizar ${deckName}`;
+            document.getElementById('sync-mode-text').innerText = `Baraja ${deckName}`;
+            
+            // Pre-seleccionar baraja en el formulario IA
+            const selectBaraja = document.getElementById('tipoBaraja');
+            if(deckName === 'Española') selectBaraja.value = 'espanola';
+            else if(deckName === 'Póker') selectBaraja.value = 'francesa';
+            else if(deckName === 'UNO') selectBaraja.value = 'uno';
+            else selectBaraja.value = 'personalizada';
+        }
+
+        function syncSelectedDeck() {
+            switchTab('page-connect', document.querySelectorAll('.nav-item')[1]);
+        }
+
+        // --- LÓGICA DE BLUETOOTH ---
+        let isConnected = false;
+        function toggleBluetooth() {
+            const btn = document.getElementById('btn-connect');
+            const statusText = document.getElementById('bt-status-text');
+            const globalIndicator = document.getElementById('bt-global-indicator');
+            const largeIcon = document.getElementById('bt-large-icon');
+
+            if (!isConnected) {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...';
+                setTimeout(() => {
+                    isConnected = true;
+                    btn.classList.remove('outline');
+                    btn.innerHTML = '<i class="fa-solid fa-power-off"></i> Desconectar';
+                    btn.style.background = 'rgba(255, 59, 48, 0.1)';
+                    btn.style.color = '#ff453a';
+                    statusText.innerText = 'Conectado';
+                    statusText.style.color = 'var(--success)';
+                    globalIndicator.classList.add('connected');
+                    largeIcon.classList.add('active');
+                }, 1200);
+            } else {
+                isConnected = false;
+                btn.classList.add('outline');
+                btn.innerHTML = '<i class="fa-solid fa-link"></i> Conectar Dispositivo';
+                btn.style.background = 'transparent';
+                btn.style.color = 'var(--gold)';
+                statusText.innerText = 'Desconectado';
+                statusText.style.color = 'var(--text-main)';
+                globalIndicator.classList.remove('connected');
+                largeIcon.classList.remove('active');
+            }
+        }
+
+        // --- LÓGICA DEL FORMULARIO IA (Adaptado de ayuda.html) ---
+        function generarLogicaIA() {
+            const baraja = document.getElementById('tipoBaraja').value;
+            const victoria = document.getElementById('condicionVictoria').value;
+            const cartas = document.getElementById('numCartas').value;
+            const salida = document.getElementById('iaOutput');
+            const sugestion = document.getElementById('iaSugestion');
+            const btn = document.getElementById('btn-generar-ia');
+
+            // Efecto de carga
+            const textOriginal = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando Red Neuronal...';
+            salida.style.display = 'none';
+
+            setTimeout(() => {
+                let analisis = "";
+                if(baraja === 'espanola' && victoria === 'puntos') {
+                    analisis = "He detectado un patrón clásico tipo 'Tute' o 'Brisca'. He asignado valores altos a las figuras en el firmware. Las cartas registrarán los puntos automáticamente por NFC al tirarlas.";
+                } else if (victoria === 'sin_cartas' || baraja === 'uno') {
+                    analisis = "Lógica de descarte rápido configurada. El sistema Omnideck avisará si un jugador hace trampas al robar. Listo para jugar a quedarse sin cartas.";
+                } else {
+                    analisis = `Juego híbrido detectado. He creado una matriz de reglas personalizadas para un mazo de tipo '${baraja}' con manos de ${cartas} cartas. Los sensores están listos.`;
+                }
+
+                sugestion.innerText = analisis;
+                salida.style.display = 'block';
+                
+                // Scroll suave hasta el resultado
+                salida.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                
+                btn.innerHTML = textOriginal;
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
