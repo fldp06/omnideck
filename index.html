@@ -70,13 +70,11 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            /* Eliminados los bordes fijos para que sea una PWA real a pantalla completa */
         }
 
         /* --- HEADER --- */
         header {
             flex-shrink: 0;
-            /* Añadido safe-area-inset-top para que baje debajo de la isla dinámica */
             padding: calc(20px + env(safe-area-inset-top)) 25px 20px;
             display: flex;
             justify-content: space-between;
@@ -304,7 +302,6 @@
         /* --- CONTENEDOR BOTÓN FLOTANTE --- */
         #floating-sync-wrapper {
             position: absolute;
-            /* Se ajusta según la safe-area para no chocar con el nav */
             bottom: calc(75px + env(safe-area-inset-bottom)); 
             left: 0;
             width: 100%;
@@ -321,10 +318,9 @@
             background: rgba(15, 15, 18, 0.95);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            /* Añadido safe-area-inset-bottom para respetar la rayita del iPhone */
-            padding: 15px 25px calc(15px + env(safe-area-inset-bottom));
+            padding: 15px 20px calc(15px + env(safe-area-inset-bottom)); /* Ajustado padding para 4 botones */
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between; /* Ajustado para distribuir mejor */
             border-top: 1px solid rgba(255,255,255,0.03);
             z-index: 30;
             width: 100%;
@@ -336,7 +332,8 @@
             font-size: 0.75rem;
             transition: all 0.3s;
             position: relative;
-            padding: 5px 15px;
+            padding: 5px 10px;
+            flex: 1; /* Para que ocupen lo mismo */
         }
         .nav-item i { font-size: 1.4rem; margin-bottom: 6px; display: block; transition: transform 0.3s; }
         .nav-item.active { color: var(--text-main); font-weight: 600; }
@@ -355,6 +352,59 @@
             border-radius: 50%;
         }
         .nav-item.ai-tab.active::after { background-color: var(--accent-ai); box-shadow: 0 0 8px var(--accent-ai); }
+
+        /* ===================================================
+           ESTILOS AÑADIDOS EXCLUSIVOS PARA LA GALERÍA
+        =================================================== */
+        .hero-gallery { text-align: center; margin-bottom: 25px; }
+        .hero-tag {
+            display: inline-block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px;
+            text-transform: uppercase; background: var(--gold-dim); border: 1px solid rgba(230, 194, 122, 0.2);
+            padding: 6px 12px; border-radius: 20px; margin-bottom: 12px; font-weight: 700;
+        }
+        .hero-gallery p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; padding: 0 10px; }
+        
+        .filters-container {
+            display: flex; overflow-x: auto; gap: 10px; padding-bottom: 15px; margin-bottom: 10px;
+            scrollbar-width: none;
+        }
+        .filters-container::-webkit-scrollbar { display: none; }
+        .filter-pill {
+            background: var(--surface-color); border: 1px solid rgba(255,255,255,0.05);
+            color: var(--text-muted); padding: 10px 18px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600; white-space: nowrap; cursor: pointer; transition: 0.3s;
+        }
+        .filter-pill.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+        
+        .gallery-grid-2 { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 25px; }
+        .gallery-item {
+            background: var(--surface-color); border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 20px; padding: 18px; position: relative; backdrop-filter: blur(10px);
+        }
+        .gallery-visual {
+            height: 140px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            font-size: 3.5rem; margin-bottom: 15px; background: rgba(0,0,0,0.4); position: relative;
+        }
+        .rarity {
+            position: absolute; top: 12px; right: 12px; font-size: 0.65rem; font-weight: 700;
+            padding: 4px 10px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .r-legendary { background: rgba(230, 194, 122, 0.15); color: var(--gold); border: 1px solid rgba(230, 194, 122, 0.3); }
+        .r-epic { background: var(--ai-dim); color: var(--accent-ai); border: 1px solid rgba(191, 90, 242, 0.3); }
+        .r-common { background: rgba(50, 215, 75, 0.15); color: var(--success); border: 1px solid rgba(50, 215, 75, 0.3); }
+        
+        .gallery-item h3 { font-size: 1.1rem; margin-bottom: 5px; font-weight: 700; }
+        .gallery-item p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px; }
+        .gallery-actions {
+            display: flex; justify-content: space-between; align-items: center;
+            border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;
+        }
+        .g-type { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; letter-spacing: 1px; }
+        .btn-sync-small {
+            background: transparent; border: 1px solid var(--text-muted); color: var(--text-main);
+            padding: 8px 16px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; transition: 0.3s;
+        }
+        .btn-sync-small.equipped { background: var(--success); border-color: var(--success); color: #111; }
     </style>
 </head>
 <body>
@@ -398,7 +448,7 @@
                     </div>
                 </div>
 
-                <h2>Juegos Destacados</h2>
+                <h2>Juegos destacados del día de hoy</h2>
                 <div id="games-list">
                     <div class="list-item">
                         <i class="fa-solid fa-coins"></i>
@@ -412,6 +462,74 @@
                         <div class="list-item-content">
                             <h3>Texas Hold'em</h3>
                             <p>Baraja Póker • Auto-Detección</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="page-gallery" class="page">
+                <div class="hero-gallery">
+                    <div class="hero-tag">Inventario & Activos</div>
+                    <h1 style="font-size: 1.8rem; margin-bottom: 10px;">Colecciona lo intangible.</h1>
+                    <p>Tu biblioteca personal de reversos, arte generado por IA y efectos visuales. Sincroniza todo directamente a tu Omnideck.</p>
+                </div>
+
+                <div class="filters-container">
+                    <div class="filter-pill active" onclick="filterGallery('todos', this)">Todos</div>
+                    <div class="filter-pill" onclick="filterGallery('dorso', this)">Dorsos</div>
+                    <div class="filter-pill" onclick="filterGallery('arte', this)">Arte IA</div>
+                    <div class="filter-pill" onclick="filterGallery('efecto', this)">Efectos</div>
+                </div>
+
+                <div class="gallery-grid-2">
+                    <div class="gallery-item" data-category="dorso">
+                        <div class="gallery-visual" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
+                            <div class="rarity r-legendary">Founder Edition</div>
+                            🌌
+                        </div>
+                        <h3>Nebulosa Profunda</h3>
+                        <p>Reverso animado exclusivo para los primeros fundadores. Partículas en movimiento constante.</p>
+                        <div class="gallery-actions">
+                            <span class="g-type">DORSO ANIMADO</span>
+                            <button class="btn-sync-small" onclick="toggleEquip(this)">Sincronizar</button>
+                        </div>
+                    </div>
+
+                    <div class="gallery-item" data-category="arte">
+                        <div class="gallery-visual" style="background: linear-gradient(135deg, #3b0764, #172554);">
+                            <div class="rarity r-epic">Épico</div>
+                            🐉
+                        </div>
+                        <h3>Mazo Mitológico</h3>
+                        <p>Set completo de figuras (Reyes, Reinas, Jotas) transformadas en criaturas por IA.</p>
+                        <div class="gallery-actions">
+                            <span class="g-type">ARTE FRONTAL</span>
+                            <button class="btn-sync-small" onclick="toggleEquip(this)">Sincronizar</button>
+                        </div>
+                    </div>
+
+                    <div class="gallery-item" data-category="efecto">
+                        <div class="gallery-visual" style="background: linear-gradient(135deg, #064e3b, #022c22);">
+                            <div class="rarity r-common">Base</div>
+                            🌿
+                        </div>
+                        <h3>Tapete Bosque</h3>
+                        <p>Cuando ganas la partida, la pantalla del móvil hace brotar naturaleza animada.</p>
+                        <div class="gallery-actions">
+                            <span class="g-type">EFECTO DE MESA</span>
+                            <button class="btn-sync-small" onclick="toggleEquip(this)">Sincronizar</button>
+                        </div>
+                    </div>
+
+                    <div class="gallery-item" data-category="arte">
+                        <div class="gallery-visual" style="border: 2px dashed rgba(191, 90, 242, 0.4); background: transparent;">
+                            ✨
+                        </div>
+                        <h3 style="color: var(--accent-ai);">Crear nuevo objeto</h3>
+                        <p>Usa el motor de IA para generar un nuevo reverso o set de cartas mediante texto.</p>
+                        <div class="gallery-actions">
+                            <span class="g-type">ASISTENTE IA</span>
+                            <button class="btn-sync-small" style="background: var(--ai-gradient); color: white; border: none;" onclick="switchTab('page-ai', document.querySelectorAll('.nav-item')[3])">Generar</button>
                         </div>
                     </div>
                 </div>
@@ -493,6 +611,10 @@
                 <i class="fa-solid fa-layer-group"></i>
                 <span>Barajas</span>
             </div>
+            <div class="nav-item" onclick="switchTab('page-gallery', this)">
+                <i class="fa-solid fa-images"></i>
+                <span>Galería</span>
+            </div>
             <div class="nav-item" onclick="switchTab('page-connect', this)">
                 <i class="fa-brands fa-bluetooth"></i>
                 <span>Conexión</span>
@@ -513,6 +635,7 @@
             document.getElementById(pageId).classList.add('active');
 
             const floatingBtnWrapper = document.getElementById('floating-sync-wrapper');
+            // Mostrar botón flotante solo en la pestaña de Barajas
             if(pageId === 'page-games') {
                 floatingBtnWrapper.style.display = 'block';
             } else {
@@ -536,7 +659,6 @@
             document.getElementById('main-sync-btn').innerHTML = `<i class="fa-brands fa-bluetooth-b"></i> Sincronizar ${deckName}`;
             document.getElementById('sync-mode-text').innerText = `Baraja ${deckName}`;
             
-            // Pre-seleccionar baraja en el formulario IA
             const selectBaraja = document.getElementById('tipoBaraja');
             if(deckName === 'Española') selectBaraja.value = 'espanola';
             else if(deckName === 'Póker') selectBaraja.value = 'francesa';
@@ -545,7 +667,33 @@
         }
 
         function syncSelectedDeck() {
-            switchTab('page-connect', document.querySelectorAll('.nav-item')[1]);
+            // Te lleva a la pestaña de conexión (índice 2 ahora por la nueva pestaña)
+            switchTab('page-connect', document.querySelectorAll('.nav-item')[2]);
+        }
+
+        // --- LÓGICA DE LA GALERÍA (NUEVA) ---
+        function filterGallery(category, btnElement) {
+            document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            const items = document.querySelectorAll('.gallery-item');
+            items.forEach(item => {
+                if (category === 'todos' || item.dataset.category === category) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function toggleEquip(btn) {
+            if (btn.classList.contains('equipped')) {
+                btn.classList.remove('equipped');
+                btn.innerText = 'Sincronizar';
+            } else {
+                btn.classList.add('equipped');
+                btn.innerText = '¡Equipado!';
+            }
         }
 
         // --- LÓGICA DE BLUETOOTH ---
@@ -591,7 +739,6 @@
             const sugestion = document.getElementById('iaSugestion');
             const btn = document.getElementById('btn-generar-ia');
 
-            // Efecto de carga
             const textOriginal = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando Red Neuronal...';
             salida.style.display = 'none';
@@ -608,8 +755,6 @@
 
                 sugestion.innerText = analisis;
                 salida.style.display = 'block';
-                
-                // Scroll suave hasta el resultado
                 salida.scrollIntoView({ behavior: 'smooth', block: 'end' });
                 
                 btn.innerHTML = textOriginal;
